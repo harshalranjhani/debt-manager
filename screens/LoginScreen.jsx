@@ -30,7 +30,7 @@ const LoginScreen = ({ navigation }) => {
       <StatusBar style="light" />
       <Image
         source={{
-          uri: "https://is5-ssl.mzstatic.com/image/thumb/Purple123/v4/a5/d4/ae/a5d4aec5-40f7-3a12-ab4a-cc62accfff85/AppIcon-0-1x_U007emarketing-0-7-0-85-220.png/512x512bb.jpg",
+          uri: "https://i0.wp.com/www.gloryofthesnow.com/wp-content/uploads/2022/06/Wallet-Peach.png?fit=700%2C700&ssl=1",
         }}
         style={{ width: 200, height: 200, borderRadius: 20 }}
       />
@@ -52,7 +52,7 @@ const LoginScreen = ({ navigation }) => {
       </View>
       <Button
         containerStyle={styles.button}
-        buttonStyle={{ backgroundColor: "#004B23" }}
+        buttonStyle={{ backgroundColor: "#F25C54" }}
         onPress={signIn}
         title="Login"
       />

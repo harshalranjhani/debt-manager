@@ -2,7 +2,7 @@ import { KeyboardAvoidingView, StyleSheet, View } from "react-native";
 import React, { useEffect } from "react";
 import { Button, Input, Image, Text } from "react-native-elements";
 import { StatusBar } from "expo-status-bar";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { Alert } from "react-native";
 
 const RegisterScreen = ({ navigation }) => {
@@ -30,6 +30,15 @@ const RegisterScreen = ({ navigation }) => {
           photoURL:
             imageUrl ||
             "https://static.vecteezy.com/system/resources/thumbnails/002/318/271/small/user-profile-icon-free-vector.jpg",
+        });
+      })
+      .then(() => {
+        db.collection("users").add({
+          userRefId: auth?.currentUser?.uid,
+          userFullName: name,
+          userEmail: auth?.currentUser?.email,
+          amountLent: 0.0,
+          amountBorrowed: 0.0,
         });
       })
       .catch((e) => Alert.alert(e.message));
