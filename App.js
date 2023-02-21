@@ -16,6 +16,7 @@ import NewTransaction from "./components/NewTransaction";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Provider as PaperProvider } from "react-native-paper";
 import Transactions from "./components/Transactions";
+import TransactionInfoScreen from "./screens/TransactionInfoScreen";
 
 const globalScreenOptions = {
   headerStyle: { backgroundColor: "#F27059" },
@@ -72,10 +73,17 @@ export default function App() {
     <PaperProvider>
       <NavigationContainer>
         <SafeAreaProvider>
-          <Stack.Navigator screenOptions={globalScreenOptions}>
+          <Stack.Navigator
+            screenOptions={globalScreenOptions}
+            initialRouteName="Login"
+          >
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Content" component={Content} />
+            <Stack.Screen
+              name="TransactionInfo"
+              component={TransactionInfoScreen}
+            />
           </Stack.Navigator>
         </SafeAreaProvider>
       </NavigationContainer>

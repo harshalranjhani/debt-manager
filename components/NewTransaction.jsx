@@ -15,6 +15,7 @@ import { RadioButton } from "react-native-paper";
 import NumericInput from "react-native-numeric-input";
 import { auth, db } from "../firebase";
 import { useHeaderHeight } from "@react-navigation/elements";
+import firebase from "firebase/compat/app";
 
 const NewTransaction = ({ navigation }) => {
   const [transactionType, setTransactionType] = useState("financier");
@@ -54,6 +55,7 @@ const NewTransaction = ({ navigation }) => {
         amount: amount,
         description: description,
         transactionWith: transactionWith,
+        created: firebase.firestore.FieldValue.serverTimestamp(),
       })
       .then(() => {
         db.collection("users")
@@ -92,6 +94,7 @@ const NewTransaction = ({ navigation }) => {
         setAmount(0);
         setDescription("");
         setTransactionWith("");
+        Alert.alert("Transaction Complete :)");
       })
       .catch((e) => Alert.alert(e.message));
   };
@@ -168,7 +171,7 @@ const NewTransaction = ({ navigation }) => {
             </Text>
             <TextInput
               value={description}
-              className="border border-[#fb9b60] p-5 border-1 h-40 flex justify-start mx-10"
+              className="border border-[#fb9b60] p-5 border-1 h-20 flex justify-start mx-10"
               underlineColorAndroid="transparent"
               placeholder="@grizzlybear paid for my bus ticket"
               placeholderTextColor="grey"

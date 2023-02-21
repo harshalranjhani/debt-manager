@@ -4,6 +4,7 @@ import {
   SafeAreaView,
   ScrollView,
   RefreshControl,
+  Alert,
 } from "react-native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { TouchableOpacity } from "react-native";
@@ -58,7 +59,8 @@ const Home = ({ navigation }) => {
       .get()
       .then((snapshot) => {
         snapshot.forEach((doc) => setCurrentUser(doc.data()));
-      });
+      })
+      .catch((e) => Alert.alert(e.message));
   };
 
   const getUsers = async () => {

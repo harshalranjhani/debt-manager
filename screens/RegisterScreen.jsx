@@ -39,6 +39,9 @@ const RegisterScreen = ({ navigation }) => {
           userEmail: auth?.currentUser?.email,
           amountLent: 0.0,
           amountBorrowed: 0.0,
+          photoURL:
+            imageUrl ||
+            "https://static.vecteezy.com/system/resources/thumbnails/002/318/271/small/user-profile-icon-free-vector.jpg",
         });
       })
       .catch((e) => Alert.alert(e.message));
