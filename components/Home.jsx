@@ -163,21 +163,30 @@ const Home = ({ navigation }) => {
             Click to copy unique ID
           </Text>
           <View>
-            {users.map((user) => (
-              <View key={user.userRefId} className="flex justify-around m-2">
-                <Text className="text-center text-xl font-semibold mx-4">
-                  {user.userFullName}{" "}
-                  <Text>
-                    <Ionicons
-                      onPress={copyId.bind(null, user)}
-                      name={"copy"}
-                      size={25}
-                      color={"#F4845F"}
-                    />{" "}
-                  </Text>
-                </Text>
+            {refreshing ? (
+              <Text className="text-center text-xl mx-4">Loading data...</Text>
+            ) : (
+              <View>
+                {users.map((user) => (
+                  <View
+                    key={user.userRefId}
+                    className="flex justify-around m-2"
+                  >
+                    <Text className="text-center text-xl font-semibold mx-4">
+                      {user.userFullName}{" "}
+                      <Text>
+                        <Ionicons
+                          onPress={copyId.bind(null, user)}
+                          name={"copy"}
+                          size={25}
+                          color={"#F4845F"}
+                        />{" "}
+                      </Text>
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
+            )}
           </View>
         </View>
       </ScrollView>

@@ -98,45 +98,55 @@ const Transactions = ({ navigation }) => {
       }
     >
       <List.Section>
-        <List.Subheader>Your current transactions</List.Subheader>
-        {transactions.map((transaction) => (
-          <List.Item
-            key={transaction.id}
-            onPress={() =>
-              navigation.navigate("TransactionInfo", { transaction })
-            }
-            className="px-10"
-            title={`${`\u20B9`}${transaction.amount}`}
-            description={transaction.description}
-            left={() => (
-              <Image
-                source={{
-                  uri: "https://cdn-icons-png.flaticon.com/512/33/33308.png",
-                }}
-                style={{ width: 50, height: 50, borderRadius: 20 }}
+        <List.Subheader>
+          {transactions.length === 0
+            ? "No transactions available"
+            : "Your current transactions"}
+        </List.Subheader>
+        {refreshing ? (
+          <Text className="text-center mt-40">Loading data...</Text>
+        ) : (
+          <View>
+            {transactions.map((transaction) => (
+              <List.Item
+                key={transaction.id}
+                onPress={() =>
+                  navigation.navigate("TransactionInfo", { transaction })
+                }
+                className="px-10"
+                title={`${`\u20B9`}${transaction.amount}`}
+                description={transaction.description}
+                left={() => (
+                  <Image
+                    source={{
+                      uri: "https://cdn-icons-png.flaticon.com/512/33/33308.png",
+                    }}
+                    style={{ width: 50, height: 50, borderRadius: 20 }}
+                  />
+                )}
               />
-            )}
-          />
-        ))}
-        {awayTransactions.map((transaction) => (
-          <List.Item
-            key={transaction.id}
-            onPress={() =>
-              navigation.navigate("TransactionInfo", { transaction })
-            }
-            className="px-10"
-            title={`${`\u20B9`}${transaction.amount}`}
-            description={transaction.description}
-            left={() => (
-              <Image
-                source={{
-                  uri: "https://cdn-icons-png.flaticon.com/512/33/33308.png",
-                }}
-                style={{ width: 50, height: 50, borderRadius: 20 }}
+            ))}
+            {awayTransactions.map((transaction) => (
+              <List.Item
+                key={transaction.id}
+                onPress={() =>
+                  navigation.navigate("TransactionInfo", { transaction })
+                }
+                className="px-10"
+                title={`${`\u20B9`}${transaction.amount}`}
+                description={transaction.description}
+                left={() => (
+                  <Image
+                    source={{
+                      uri: "https://cdn-icons-png.flaticon.com/512/33/33308.png",
+                    }}
+                    style={{ width: 50, height: 50, borderRadius: 20 }}
+                  />
+                )}
               />
-            )}
-          />
-        ))}
+            ))}
+          </View>
+        )}
       </List.Section>
     </ScrollView>
   );

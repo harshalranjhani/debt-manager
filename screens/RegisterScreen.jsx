@@ -90,7 +90,7 @@ const RegisterScreen = ({ navigation }) => {
 
       <Button
         title="Register"
-        buttonStyle={{ backgroundColor: "#004B23" }}
+        buttonStyle={{ backgroundColor: "#F25C54" }}
         onPress={register}
         raised
         containerStyle={styles.button}
