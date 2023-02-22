@@ -22,12 +22,30 @@ const NewTransaction = ({ navigation }) => {
   const [amount, setAmount] = useState(0.0);
   const [description, setDescription] = useState("");
   const [transactionWith, setTransactionWith] = useState("");
+  const [transactionWithUser, setTransactionWithUser] = useState({});
   const height = useHeaderHeight();
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, [navigation]);
+
+  const getTransactionWithUserData = async () => {
+    try {
+      const responseRef = await db
+        .collection("users")
+        .where("userRefId", "==", transactionWith)
+        .get();
+
+      responseRef.forEach((doc) => {
+        // console.log(doc.data());
+        setTransactionWithUser(doc.data());
+        console.log(transactionWithUser);
+      });
+    } catch (e) {
+      Alert.alert(e.message);
+    }
+  };
 
   const completeTransaction = async () => {
     if (
@@ -46,9 +64,13 @@ const NewTransaction = ({ navigation }) => {
       setTransactionWith("");
       return;
     }
+    await getTransactionWithUserData();
     await db
       .collection("transactions")
       .add({
+        transactionWithAuthorName: transactionWithUser.userFullName,
+        transactionWithPhoto: transactionWithUser.photoURL,
+        transactionAuthorPhoto: auth?.currentUser?.photoURL,
         transactionAuthor: auth?.currentUser?.uid,
         transactionAuthorName: auth?.currentUser?.displayName,
         transactionType: transactionType,
@@ -189,7 +211,9 @@ const NewTransaction = ({ navigation }) => {
               underlineColorAndroid="transparent"
               placeholder="The unique id you just copied."
               placeholderTextColor="grey"
-              onChangeText={(value) => setTransactionWith(value)}
+              onChangeText={(value) => {
+                setTransactionWith(value);
+              }}
             />
             <View className="m-10 bg-[#fb9b60]">
               <Button

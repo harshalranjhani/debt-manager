@@ -14,6 +14,7 @@ import { Avatar } from "react-native-elements";
 const Transactions = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(true);
   const [transactions, setTransactions] = useState([]);
+  const [awayTransactions, setAwayTransactions] = useState([]);
   const signOutUser = () => {
     auth.signOut().then(() => {
       navigation.replace("Login");
@@ -36,11 +37,10 @@ const Transactions = ({ navigation }) => {
     });
   }, [navigation]);
 
-  const getTransactions = async () => {
+  const getTransactions = () => {
     setRefreshing(true);
     let transactionsArray = [];
-    await db
-      .collection("transactions")
+    db.collection("transactions")
       .where("transactionAuthor", "==", auth?.currentUser?.uid)
       //   .orderBy("created")
       .get()
@@ -57,19 +57,68 @@ const Transactions = ({ navigation }) => {
       })
       .catch((e) => console.log(e.message));
   };
+
+  const getAwayTransactions = () => {
+    setRefreshing(true);
+    let awayTransactionsArray = [];
+    db.collection("transactions")
+      .where("transactionWith", "==", auth?.currentUser?.uid)
+      //   .orderBy("created")
+      .get()
+      .then((querySnapshot) =>
+        querySnapshot.forEach((doc) => {
+          console.log(doc.data());
+          console.log({ ...doc.data(), id: doc.id });
+          awayTransactionsArray.push({ ...doc.data(), id: doc.id });
+        })
+      )
+      .then(() => {
+        setAwayTransactions(awayTransactionsArray);
+        setRefreshing(false);
+      })
+      .catch((e) => console.log(e.message));
+  };
+
+  const getAllTransactions = () => {
+    getTransactions();
+    getAwayTransactions();
+  };
   useEffect(() => {
     getTransactions();
+    getAwayTransactions();
   }, []);
 
   return (
     <ScrollView
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={getTransactions} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={getAllTransactions}
+        />
       }
     >
       <List.Section>
         <List.Subheader>Your current transactions</List.Subheader>
         {transactions.map((transaction) => (
+          <List.Item
+            key={transaction.id}
+            onPress={() =>
+              navigation.navigate("TransactionInfo", { transaction })
+            }
+            className="px-10"
+            title={`${`\u20B9`}${transaction.amount}`}
+            description={transaction.description}
+            left={() => (
+              <Image
+                source={{
+                  uri: "https://cdn-icons-png.flaticon.com/512/33/33308.png",
+                }}
+                style={{ width: 50, height: 50, borderRadius: 20 }}
+              />
+            )}
+          />
+        ))}
+        {awayTransactions.map((transaction) => (
           <List.Item
             key={transaction.id}
             onPress={() =>

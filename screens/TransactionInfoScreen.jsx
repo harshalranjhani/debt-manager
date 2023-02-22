@@ -32,22 +32,22 @@ const TransactionInfoScreen = ({ navigation, route }) => {
           <Avatar
             size="xlarge"
             rounded
-            source={{ uri: auth?.currentUser?.photoURL }}
+            source={{ uri: route.params.transaction.transactionAuthorPhoto }}
             containerStyle={{ marginHorizontal: 4 }}
           />
           <Text className="text-center my-4">
-            {auth?.currentUser?.displayName}
+            {route.params.transaction.transactionAuthorName}
           </Text>
         </View>
         <View>
           <Avatar
             size="xlarge"
             rounded
-            source={{ uri: transactedUser?.photoURL }}
+            source={{ uri: route.params.transaction.transactionWithPhoto }}
             containerStyle={{ marginHorizontal: 4 }}
           />
           <Text className="text-center my-4">
-            {transactedUser?.userFullName}
+            {route.params.transaction.transactionWithAuthorName}
           </Text>
         </View>
       </View>
@@ -65,14 +65,14 @@ const TransactionInfoScreen = ({ navigation, route }) => {
         <Text className="font-black text-2xl text-center">
           Debtor:{" "}
           {route.params.transaction.transactionType == "debtor"
-            ? auth?.currentUser?.displayName
-            : transactedUser.userFullName}
+            ? route.params.transaction.transactionAuthorName
+            : route.params.transaction.transactionWithAuthorName}
         </Text>
         <Text className="font-black text-2xl text-center">
           Financier:{" "}
           {route.params.transaction.transactionType == "financier"
-            ? auth?.currentUser?.displayName
-            : transactedUser.userFullName}
+            ? route.params.transaction.transactionAuthorName
+            : route.params.transaction.transactionWithAuthorName}
         </Text>
       </View>
       <View>
