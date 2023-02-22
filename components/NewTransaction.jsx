@@ -23,6 +23,7 @@ const NewTransaction = ({ navigation }) => {
   const [description, setDescription] = useState("");
   const [transactionWith, setTransactionWith] = useState("");
   const [transactionWithUser, setTransactionWithUser] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
   const height = useHeaderHeight();
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -44,81 +45,102 @@ const NewTransaction = ({ navigation }) => {
       });
     } catch (e) {
       Alert.alert(e.message);
+      setIsProcessing(false);
     }
   };
 
   const completeTransaction = async () => {
-    if (
-      description.trim() == "" ||
-      transactionWith.trim() == "" ||
-      amount == 0
-    ) {
-      Alert.alert("No fields must remain empty. Amount cannot be 0.");
-      return;
-    }
-    if (transactionWith == auth?.currentUser?.uid) {
-      Alert.alert("You cannot make a transaction with yourself.");
-      setTransactionType("financier");
-      setAmount(0);
-      setDescription("");
-      setTransactionWith("");
-      return;
-    }
-    await getTransactionWithUserData();
-    await db
-      .collection("transactions")
-      .add({
-        transactionWithAuthorName: transactionWithUser.userFullName,
-        transactionWithPhoto: transactionWithUser.photoURL,
-        transactionAuthorPhoto: auth?.currentUser?.photoURL,
-        transactionAuthor: auth?.currentUser?.uid,
-        transactionAuthorName: auth?.currentUser?.displayName,
-        transactionType: transactionType,
-        amount: amount,
-        description: description,
-        transactionWith: transactionWith,
-        created: firebase.firestore.FieldValue.serverTimestamp(),
-      })
-      .then(() => {
-        db.collection("users")
-          .where("userRefId", "==", auth?.currentUser?.uid)
-          .get()
-          .then((snapshot) =>
-            snapshot.forEach((doc) =>
-              transactionType == "debtor"
-                ? doc.ref.update({
-                    amountBorrowed: doc.data().amountBorrowed + amount,
-                  })
-                : doc.ref.update({ amountLent: doc.data().amountLent + amount })
-            )
-          )
-          .catch((e) => Alert.alert(e.message));
-      })
-      .then(() => {
-        db.collection("users")
-          .where("userRefId", "==", transactionWith)
-          .get()
-          .then((snapshot) =>
-            snapshot.forEach((doc) =>
-              transactionType == "debtor"
-                ? doc.ref.update({
-                    amountLent: doc.data().amountLent + amount,
-                  })
-                : doc.ref.update({
-                    amountBorrowed: doc.data().amountBorrowed + amount,
-                  })
-            )
-          )
-          .catch((e) => Alert.alert(e.message));
-      })
-      .then(() => {
+    setIsProcessing(true);
+    try {
+      if (
+        description.trim() == "" ||
+        transactionWith.trim() == "" ||
+        amount == 0
+      ) {
+        Alert.alert("No fields must remain empty. Amount cannot be 0.");
+        setIsProcessing(false);
+        return;
+      }
+      if (transactionWith == auth?.currentUser?.uid) {
+        Alert.alert("You cannot make a transaction with yourself.");
         setTransactionType("financier");
         setAmount(0);
         setDescription("");
         setTransactionWith("");
-        Alert.alert("Transaction Complete :)");
-      })
-      .catch((e) => Alert.alert(e.message));
+        setIsProcessing(false);
+        return;
+      }
+      await getTransactionWithUserData();
+      await db
+        .collection("transactions")
+        .add({
+          transactionWithAuthorName: transactionWithUser.userFullName,
+          transactionWithPhoto: transactionWithUser.photoURL,
+          transactionAuthorPhoto: auth?.currentUser?.photoURL,
+          transactionAuthor: auth?.currentUser?.uid,
+          transactionAuthorName: auth?.currentUser?.displayName,
+          transactionType: transactionType,
+          amount: amount,
+          description: description,
+          transactionWith: transactionWith,
+          created: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+        .then(() => {
+          db.collection("users")
+            .where("userRefId", "==", auth?.currentUser?.uid)
+            .get()
+            .then((snapshot) =>
+              snapshot.forEach((doc) =>
+                transactionType == "debtor"
+                  ? doc.ref.update({
+                      amountBorrowed: doc.data().amountBorrowed + amount,
+                    })
+                  : doc.ref.update({
+                      amountLent: doc.data().amountLent + amount,
+                    })
+              )
+            )
+            .catch((e) => {
+              Alert.alert(e.message);
+              setIsProcessing(false);
+            });
+        })
+        .then(() => {
+          db.collection("users")
+            .where("userRefId", "==", transactionWith)
+            .get()
+            .then((snapshot) =>
+              snapshot.forEach((doc) =>
+                transactionType == "debtor"
+                  ? doc.ref.update({
+                      amountLent: doc.data().amountLent + amount,
+                    })
+                  : doc.ref.update({
+                      amountBorrowed: doc.data().amountBorrowed + amount,
+                    })
+              )
+            )
+            .catch((e) => {
+              Alert.alert(e.message);
+              setIsProcessing(false);
+            });
+        })
+        .then(() => {
+          setTransactionType("financier");
+          setAmount(0);
+          setDescription("");
+          setTransactionWith("");
+          setIsProcessing(false);
+          Alert.alert("Transaction Complete :)");
+        })
+        .catch((e) => {
+          Alert.alert(e.message);
+          setIsProcessing(false);
+        });
+    } catch (e) {
+      Alert.alert("Uh Oh! Something went wrong. Please try again?");
+      setIsProcessing(false);
+    }
   };
   return (
     <ScrollView>
@@ -217,7 +239,10 @@ const NewTransaction = ({ navigation }) => {
             />
             <View className="m-10 bg-[#fb9b60]">
               <Button
-                title="Complete Transaction"
+                disabled={isProcessing}
+                title={`${
+                  isProcessing ? "Processing..." : "Complete Transaction"
+                }`}
                 color="white"
                 onPress={completeTransaction}
               />
