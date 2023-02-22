@@ -98,11 +98,13 @@ const Transactions = ({ navigation }) => {
       }
     >
       <List.Section>
-        <List.Subheader>
-          {transactions.length === 0
-            ? "No transactions available"
-            : "Your current transactions"}
-        </List.Subheader>
+        {!refreshing && (
+          <List.Subheader>
+            {transactions.length === 0 && awayTransactions.length === 0
+              ? "No transactions available"
+              : "Your current transactions"}
+          </List.Subheader>
+        )}
         {refreshing ? (
           <Text className="text-center mt-40">Loading data...</Text>
         ) : (
