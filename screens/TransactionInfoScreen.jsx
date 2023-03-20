@@ -7,6 +7,7 @@ import { auth, db } from "../firebase";
 
 const TransactionInfoScreen = ({ navigation, route }) => {
   const [transactedUser, setTransactedUser] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   console.log(route.params.transaction.transactionWith);
   const getTransactedUser = async () => {
     db.collection("users")
@@ -27,6 +28,12 @@ const TransactionInfoScreen = ({ navigation, route }) => {
   }, []);
 
   const deleteTransaction = () => {
+    setIsLoading(true);
+    if (auth?.currentUser?.uid !== route.params.transaction.transactionAuthor) {
+      Alert.alert("Only transaction authors can delete the transaction.");
+      setIsLoading(false);
+      return;
+    }
     db.collection("users")
       .where("userRefId", "==", route.params.transaction.transactionAuthor)
       .get()
@@ -63,6 +70,7 @@ const TransactionInfoScreen = ({ navigation, route }) => {
           );
       })
       .then(() => {
+        setIsLoading(false);
         db.collection("transactions")
           .doc(route.params.transaction.id)
           .delete()
@@ -70,7 +78,10 @@ const TransactionInfoScreen = ({ navigation, route }) => {
             navigation.navigate("Transactions");
           });
       })
-      .catch((e) => Alert.alert(e.message));
+      .catch((e) => {
+        Alert.alert(e.message);
+        setIsLoading(false);
+      });
   };
 
   return (
@@ -138,13 +149,14 @@ const TransactionInfoScreen = ({ navigation, route }) => {
       </View>
       <View className="w-auto flex items-center" style={styles.inputContainer}>
         <Button
+          disabled={isLoading}
           containerStyle={styles.button}
           titleStyle={{
             color: "white",
           }}
           buttonStyle={{ backgroundColor: "#F25C54", marginVertical: 10 }}
           onPress={deleteTransaction}
-          title="Delete Transaction"
+          title={`${isLoading ? "Processing" : "Delete Transaction"}`}
         />
       </View>
     </ScrollView>
