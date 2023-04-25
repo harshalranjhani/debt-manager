@@ -172,7 +172,7 @@ const Home = ({ navigation }) => {
                     key={user.userRefId}
                     className="flex justify-around m-2"
                   >
-                    <Text className="text-center text-xl font-semibold mx-4">
+                    <Text className="text-xl font-semibold mx-4">
                       {user.userFullName}{" "}
                       <Text>
                         <Ionicons
