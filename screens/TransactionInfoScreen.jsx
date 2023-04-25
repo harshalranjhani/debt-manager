@@ -58,13 +58,13 @@ const TransactionInfoScreen = ({ navigation, route }) => {
             snapshot.forEach((doc) =>
               route.params.transaction.transactionType === "debtor"
                 ? doc.ref.update({
+                    amountLent:
+                      doc.data().amountLent - route.params.transaction.amount,
+                  })
+                : doc.ref.update({
                     amountBorrowed:
                       doc.data().amountBorrowed -
                       route.params.transaction.amount,
-                  })
-                : doc.ref.update({
-                    amountLent:
-                      doc.data().amountLent - route.params.transaction.amount,
                   })
             )
           );
