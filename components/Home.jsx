@@ -40,7 +40,7 @@ const Home = ({ navigation }) => {
     setBorrowedPercentage(Math.ceil(currentborrowedPercentage));
   };
 
-  useEffect(() => {
+  const getGreeting = () => {
     today = new Date();
     curHr = today.getHours();
 
@@ -51,6 +51,10 @@ const Home = ({ navigation }) => {
     } else {
       setGreeting("Good Evening");
     }
+  };
+
+  useEffect(() => {
+    getGreeting();
   }, [today, curHr]);
 
   const getCurrentUser = async () => {
@@ -66,6 +70,7 @@ const Home = ({ navigation }) => {
   const getUsers = async () => {
     setRefreshing(true);
     getCurrentUser();
+    getGreeting();
     calculatePercentage();
     let usersArr = [];
     await db
