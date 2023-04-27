@@ -55,6 +55,7 @@ const Home = ({ navigation }) => {
 
   useEffect(() => {
     getGreeting();
+    calculatePercentage();
   }, [today, curHr]);
 
   const getCurrentUser = async () => {
