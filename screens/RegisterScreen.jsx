@@ -44,6 +44,21 @@ const RegisterScreen = ({ navigation }) => {
             "https://static.vecteezy.com/system/resources/thumbnails/002/318/271/small/user-profile-icon-free-vector.jpg",
         });
       })
+      .then(async () => {
+        const response = await fetch(
+          "https://harshalranjhaniapi.vercel.app/mail/welcome",
+          {
+            method: "POST",
+            body: {
+              mailObj: {
+                appName: "Debt Manager",
+                email,
+                appAdjective: "Stocker!",
+              },
+            },
+          }
+        );
+      })
       .catch((e) => Alert.alert(e.message));
   };
 
