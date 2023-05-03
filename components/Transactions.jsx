@@ -22,6 +22,7 @@ const Transactions = ({ navigation }) => {
   };
 
   useLayoutEffect(() => {
+    getAllTransactions();
     navigation.setOptions({
       headerShown: true,
       headerStyle: { backgroundColor: "#F25C54" },
@@ -84,8 +85,13 @@ const Transactions = ({ navigation }) => {
     getAwayTransactions();
   };
   useEffect(() => {
-    getTransactions();
-    getAwayTransactions();
+    const unsubscribe = navigation.addListener("focus", () => {
+      getTransactions();
+      getAllTransactions();
+      getAwayTransactions();
+    });
+
+    return unsubscribe;
   }, []);
 
   return (
