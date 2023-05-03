@@ -4,6 +4,7 @@ import { Button, Input, Image, Text } from "react-native-elements";
 import { StatusBar } from "expo-status-bar";
 import { auth, db } from "../firebase";
 import { Alert } from "react-native";
+import axios from "axios";
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = React.useState("");
@@ -45,16 +46,13 @@ const RegisterScreen = ({ navigation }) => {
         });
       })
       .then(async () => {
-        const response = await fetch(
+        const response = await axios.post(
           "https://harshalranjhaniapi.vercel.app/mail/welcome",
           {
-            method: "POST",
-            body: {
-              mailObj: {
-                appName: "Debt Manager",
-                email,
-                appAdjective: "Stocker!",
-              },
+            mailObj: {
+              appName: "Debt Manager",
+              email,
+              appAdjective: "Stocker!",
             },
           }
         );

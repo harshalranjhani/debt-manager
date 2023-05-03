@@ -16,6 +16,7 @@ import NumericInput from "react-native-numeric-input";
 import { auth, db } from "../firebase";
 import { useHeaderHeight } from "@react-navigation/elements";
 import firebase from "firebase/compat/app";
+import axios from "axios";
 
 const NewTransaction = ({ navigation }) => {
   const [transactionType, setTransactionType] = useState("financier");
@@ -84,6 +85,31 @@ const NewTransaction = ({ navigation }) => {
           description: description,
           transactionWith: transactionWith,
           created: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+        .then(async () => {
+          let mailObj = {};
+          db.collection("users")
+            .where("userRefId", "==", transactionWith)
+            .get()
+            .then((snapshot) =>
+              snapshot.forEach((doc) =>
+                transactionType === "debtor"
+                  ? (mailObj = {
+                      email: doc.userEmail,
+                      appName: "Debt Manager",
+                      transactionType: "borrowed",
+                      initiatedUser: auth?.currentUser?.displayName,
+                      amount,
+                    })
+                  : (mailObj = {
+                      email: doc.userEmail,
+                      appName: "Debt Manager",
+                      transactionType: "lent",
+                      initiatedUser: auth?.currentUser?.displayName,
+                      amount,
+                    })
+              )
+            );
         })
         .then(() => {
           db.collection("users")
