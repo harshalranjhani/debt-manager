@@ -88,21 +88,22 @@ const NewTransaction = ({ navigation }) => {
         })
         .then(async () => {
           let mailObj = {};
-          db.collection("users")
+          await db
+            .collection("users")
             .where("userRefId", "==", transactionWith)
             .get()
             .then((snapshot) =>
               snapshot.forEach((doc) =>
                 transactionType === "debtor"
                   ? (mailObj = {
-                      email: doc.userEmail,
+                      email: doc.data().userEmail,
                       appName: "Debt Manager",
                       transactionType: "borrowed",
                       initiatedUser: auth?.currentUser?.displayName,
                       amount,
                     })
                   : (mailObj = {
-                      email: doc.userEmail,
+                      email: doc.data().userEmail,
                       appName: "Debt Manager",
                       transactionType: "lent",
                       initiatedUser: auth?.currentUser?.displayName,
@@ -110,6 +111,14 @@ const NewTransaction = ({ navigation }) => {
                     })
               )
             );
+          console.log(mailObj);
+          const response = await axios.post(
+            "https://harshalranjhaniapi.vercel.app/mail/transaction/new",
+            {
+              mailObj,
+            }
+          );
+          console.log(response);
         })
         .then(() => {
           db.collection("users")
