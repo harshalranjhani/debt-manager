@@ -88,9 +88,13 @@ const Home = ({ navigation }) => {
   };
 
   useEffect(() => {
-    getUsers();
-    calculatePercentage();
-    getCurrentUser();
+    const unsubscribe = navigation.addListener("focus", () => {
+      getUsers();
+      calculatePercentage();
+      getCurrentUser();
+    });
+
+    return unsubscribe;
   }, []);
 
   const copyId = async (user) => {
