@@ -54,6 +54,7 @@ const Home = ({ navigation }) => {
   };
 
   useEffect(() => {
+    getCurrentUser();
     getGreeting();
     calculatePercentage();
   }, [today, curHr]);
@@ -97,6 +98,9 @@ const Home = ({ navigation }) => {
   };
 
   useLayoutEffect(() => {
+    getCurrentUser();
+    getGreeting();
+    calculatePercentage();
     navigation.setOptions({
       // headerShown: false,
       title: "Debt Manager",
