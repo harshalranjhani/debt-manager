@@ -48,11 +48,11 @@ export default function App() {
             let iconName;
 
             if (route.name === "Home") {
-              iconName = focused ? "ios-home" : "home-outline";
+              iconName = focused ? "home" : "home";
             } else if (route.name === "NewTransaction") {
-              iconName = focused ? "add-circle-sharp" : "add-circle-outline";
+              iconName = focused ? "add-circle" : "add-circle-outline";
             } else if (route.name == "Transactions") {
-              iconName = focused ? "ios-list-circle-sharp" : "ios-list-outline";
+              iconName = focused ? "list" : "list";
             }
 
             // You can return any component that you like here!
