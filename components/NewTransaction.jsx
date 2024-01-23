@@ -31,24 +31,35 @@ const NewTransaction = ({ navigation }) => {
       headerShown: false,
     });
   }, [navigation]);
-
   const getTransactionWithUserData = async () => {
     try {
       const responseRef = await db
         .collection("users")
         .where("userRefId", "==", transactionWith)
         .get();
-
+  
+      let userData = null;
+  
       responseRef.forEach((doc) => {
-        // console.log(doc.data());
-        setTransactionWithUser(doc.data());
-        console.log(transactionWithUser);
+        userData = doc.data();
       });
+  
+      if (!userData) {
+        Alert.alert("User not found");
+        setIsProcessing(false);
+        return null;
+      }
+  
+      setTransactionWithUser(userData);
+      console.log(userData);
+      return userData;
     } catch (e) {
       Alert.alert(e.message);
       setIsProcessing(false);
+      return null;
     }
   };
+  
 
   const completeTransaction = async () => {
     setIsProcessing(true);
@@ -71,12 +82,12 @@ const NewTransaction = ({ navigation }) => {
         setIsProcessing(false);
         return;
       }
-      await getTransactionWithUserData();
+      const userData = await getTransactionWithUserData();
       await db
         .collection("transactions")
         .add({
-          transactionWithAuthorName: transactionWithUser.userFullName,
-          transactionWithPhoto: transactionWithUser.photoURL,
+          transactionWithAuthorName: userData.userFullName,
+          transactionWithPhoto: userData.photoURL,
           transactionAuthorPhoto: auth?.currentUser?.photoURL,
           transactionAuthor: auth?.currentUser?.uid,
           transactionAuthorName: auth?.currentUser?.displayName,
