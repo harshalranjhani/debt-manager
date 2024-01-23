@@ -19,8 +19,8 @@ const Home = ({ navigation }) => {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState({});
   const [refreshing, setRefreshing] = useState(true);
-  const [lentPercentage, setLentPercentage] = useState(0);
-  const [borrowedPercentage, setBorrowedPercentage] = useState(0);
+  const [lentPercentage, setLentPercentage] = useState(50);
+  const [borrowedPercentage, setBorrowedPercentage] = useState(50);
   const signOutUser = () => {
     auth.signOut().then(() => {
       navigation.replace("Login");
@@ -101,6 +101,10 @@ const Home = ({ navigation }) => {
     await Clipboard.setStringAsync(user.userRefId);
   };
 
+  useEffect(()=>{
+    calculatePercentage();
+  },[lentPercentage, borrowedPercentage])
+
   useLayoutEffect(() => {
     getCurrentUser();
     getGreeting();
@@ -140,12 +144,12 @@ const Home = ({ navigation }) => {
             data={[
               {
                 key: "Money Borrowed",
-                count: borrowedPercentage,
+                count: borrowedPercentage || 50,
                 color: "#F7B267",
               },
               {
                 key: "Money Lent",
-                count: lentPercentage,
+                count: lentPercentage || 50,
                 color: "#F4845F",
               },
             ]}
