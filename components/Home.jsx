@@ -5,6 +5,8 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
+  StyleSheet,
+  Vibration,
 } from "react-native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { TouchableOpacity } from "react-native";
@@ -13,6 +15,8 @@ import { auth, db } from "../firebase";
 import PieChart from "react-native-expo-pie-chart";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import * as Clipboard from "expo-clipboard";
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 const Home = ({ navigation }) => {
   const [greeting, setGreeting] = useState("");
@@ -98,7 +102,14 @@ const Home = ({ navigation }) => {
   }, []);
 
   const copyId = async (user) => {
-    await Clipboard.setStringAsync(user.userRefId);
+    try {
+      await Clipboard.setStringAsync(user.userRefId);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Success", "ID copied to clipboard!");
+    } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Error", "Failed to copy ID");
+    }
   };
 
   useEffect(()=>{
@@ -126,20 +137,21 @@ const Home = ({ navigation }) => {
   }, [navigation]);
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.container}>
       <ScrollView
-        className="h-[100%]"
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={getUsers} />
         }
       >
-        <View>
-          <Text className="text-4xl mx-10 mt-10">{greeting},</Text>
-          <Text className="text-4xl ml-10">
+        <Animated.View entering={FadeIn} style={styles.greetingContainer}>
+          <Text style={styles.greetingText}>{greeting},</Text>
+          <Text style={styles.nameText}>
             {auth?.currentUser?.displayName?.split(" ")[0]}
           </Text>
-        </View>
-        <View className="mt-10">
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown} style={styles.chartContainer}>
           <PieChart
             data={[
               {
@@ -155,61 +167,160 @@ const Home = ({ navigation }) => {
             ]}
             length={300}
           />
-        </View>
-        <View className="flex flex-row space-x-14 m-5">
-          <View className="flex flex-col">
-            <Text className="font-bold ">Money lent so far</Text>
-            <Text className="font-bold text-6xl text-center my-2">
-              {"\u20B9"}
-            </Text>
-            <Text className="font-normal text-3xl m-0 text-center">
+        </Animated.View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Money lent so far</Text>
+            <Text style={styles.currencySymbol}>{"\u20B9"}</Text>
+            <Text style={styles.amount}>
               {parseFloat(currentUser.amountLent).toFixed(2)}
             </Text>
           </View>
-          <View className="flex flex-col ">
-            <Text className="font-bold ">Money Borrowed so far</Text>
-            <Text className="font-bold text-6xl text-center my-2">
-              {"\u20B9"}
-            </Text>
-            <Text className="font-normal text-3xl m-0 text-center">
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Money Borrowed so far</Text>
+            <Text style={styles.currencySymbol}>{"\u20B9"}</Text>
+            <Text style={styles.amount}>
               {parseFloat(currentUser.amountBorrowed).toFixed(2)}
             </Text>
           </View>
         </View>
-        <View>
-          <Text className="font-black m-10 text-2xl text-center">
-            Click to copy unique ID
-          </Text>
-          <View>
-            {refreshing ? (
-              <Text className="text-center text-xl mx-4">Loading data...</Text>
-            ) : (
-              <View>
-                {users.map((user) => (
-                  <View
-                    key={user.userRefId}
-                    className="flex justify-around m-2"
-                  >
-                    <Text className="text-xl font-semibold mx-4">
-                      {user.userFullName}{" "}
-                      <Text>
-                        <Ionicons
-                          onPress={copyId.bind(null, user)}
-                          name={"copy"}
-                          size={25}
-                          color={"#F4845F"}
-                        />{" "}
-                      </Text>
-                    </Text>
+
+        <View style={styles.userListContainer}>
+          <Text style={styles.userListTitle}>Click to copy unique ID</Text>
+          {refreshing ? (
+            <Text style={styles.loadingText}>Loading data...</Text>
+          ) : (
+            <View>
+              {users.map((user, index) => (
+                <Animated.View
+                  entering={FadeInDown.delay(index * 100)}
+                  key={user.userRefId}
+                  style={styles.userItem}
+                >
+                  <View style={styles.userItemContent}>
+                    <Text style={styles.userName}>{user.userFullName}</Text>
+                    <TouchableOpacity 
+                      onPress={() => copyId(user)}
+                      style={styles.copyButton}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="copy-outline" size={22} color="#F4845F" />
+                    </TouchableOpacity>
                   </View>
-                ))}
-              </View>
-            )}
-          </View>
+                </Animated.View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollView: {
+    height: '100%',
+  },
+  greetingContainer: {
+    padding: 20,
+    marginTop: 20,
+  },
+  greetingText: {
+    fontSize: 36,
+    fontWeight: '600',
+    color: '#333',
+  },
+  nameText: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#F4845F',
+  },
+  chartContainer: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 20,
+    marginTop: 20,
+  },
+  statBox: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    width: '45%',
+  },
+  statLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#666',
+    textAlign: 'center',
+  },
+  currencySymbol: {
+    fontSize: 48,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#F4845F',
+    marginVertical: 10,
+  },
+  amount: {
+    fontSize: 24,
+    textAlign: 'center',
+    color: '#333',
+  },
+  userListContainer: {
+    padding: 20,
+  },
+  userListTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  loadingText: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#666',
+  },
+  userItem: {
+    backgroundColor: '#fff',
+    padding: 15,
+    marginVertical: 5,
+    borderRadius: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  userItemContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  copyButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#FFF5F5',
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+  },
+});
 
 export default Home;

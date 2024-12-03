@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import React, { useLayoutEffect, useState } from "react";
 import {
   SafeAreaView,
@@ -17,10 +17,13 @@ import { auth, db } from "../firebase";
 import { useHeaderHeight } from "@react-navigation/elements";
 import firebase from "firebase/compat/app";
 import axios from "axios";
+import { Vibration } from "react-native";
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 const NewTransaction = ({ navigation }) => {
   const [transactionType, setTransactionType] = useState("financier");
-  const [amount, setAmount] = useState(0.0);
+  const [amount, setAmount] = useState('');
   const [description, setDescription] = useState("");
   const [transactionWith, setTransactionWith] = useState("");
   const [transactionWithUser, setTransactionWithUser] = useState({});
@@ -64,12 +67,15 @@ const NewTransaction = ({ navigation }) => {
   const completeTransaction = async () => {
     setIsProcessing(true);
     try {
+      const numAmount = parseFloat(amount);
       if (
-        description.trim() == "" ||
-        transactionWith.trim() == "" ||
-        amount == 0
+        description.trim() === "" ||
+        transactionWith.trim() === "" ||
+        !amount || 
+        isNaN(numAmount) || 
+        numAmount <= 0
       ) {
-        Alert.alert("No fields must remain empty. Amount cannot be 0.");
+        Alert.alert("Please check your inputs", "All fields are required and amount must be greater than 0.");
         setIsProcessing(false);
         return;
       }
@@ -92,7 +98,7 @@ const NewTransaction = ({ navigation }) => {
           transactionAuthor: auth?.currentUser?.uid,
           transactionAuthorName: auth?.currentUser?.displayName,
           transactionType: transactionType,
-          amount: amount,
+          amount: parseFloat(amount),
           description: description,
           transactionWith: transactionWith,
           created: firebase.firestore.FieldValue.serverTimestamp(),
@@ -111,14 +117,14 @@ const NewTransaction = ({ navigation }) => {
                       appName: "Debt Manager",
                       transactionType: "borrowed",
                       initiatedUser: auth?.currentUser?.displayName,
-                      amount,
+                      amount: parseFloat(amount),
                     })
                   : (mailObj = {
                       email: doc.data().userEmail,
                       appName: "Debt Manager",
                       transactionType: "lent",
                       initiatedUser: auth?.currentUser?.displayName,
-                      amount,
+                      amount: parseFloat(amount),
                     })
               )
             );
@@ -139,10 +145,10 @@ const NewTransaction = ({ navigation }) => {
               snapshot.forEach((doc) =>
                 transactionType == "debtor"
                   ? doc.ref.update({
-                      amountBorrowed: doc.data().amountBorrowed + amount,
+                      amountBorrowed: doc.data().amountBorrowed + parseFloat(amount),
                     })
                   : doc.ref.update({
-                      amountLent: doc.data().amountLent + amount,
+                      amountLent: doc.data().amountLent + parseFloat(amount),
                     })
               )
             )
@@ -159,10 +165,10 @@ const NewTransaction = ({ navigation }) => {
               snapshot.forEach((doc) =>
                 transactionType == "debtor"
                   ? doc.ref.update({
-                      amountLent: doc.data().amountLent + amount,
+                      amountLent: doc.data().amountLent + parseFloat(amount),
                     })
                   : doc.ref.update({
-                      amountBorrowed: doc.data().amountBorrowed + amount,
+                      amountBorrowed: doc.data().amountBorrowed + parseFloat(amount),
                     })
               )
             )
@@ -188,125 +194,322 @@ const NewTransaction = ({ navigation }) => {
       setIsProcessing(false);
     }
   };
+
+  const handleRadioPress = (type) => {
+    setTransactionType(type);
+    Haptics.selectionAsync();
+  };
+
+  const handleSubmit = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await completeTransaction();
+  };
+
+  const handleAmountChange = (text) => {
+    if (text === '' || text === '.') {
+      setAmount(text);
+      return;
+    }
+
+    const regex = /^\d*\.?\d{0,2}$/;
+    if (regex.test(text)) {
+      setAmount(text);
+    }
+  };
+
   return (
-    <ScrollView>
-      <KeyboardAvoidingView
-        behavior={"height"}
-        style={styles.container}
-        keyboardVerticalOffset={height + 47}
+    <KeyboardAvoidingView
+      behavior={"padding"}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={height + 47}
+    >
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <SafeAreaView>
-            <Text className="text-center font-bold text-4xl m-5 leading-10">
+          <SafeAreaView style={styles.safeArea}>
+            {isProcessing && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color="#F79D65" />
+                <Text style={styles.loadingText}>Processing Transaction...</Text>
+              </View>
+            )}
+
+            <Animated.Text 
+              entering={FadeIn}
+              style={styles.headerText}
+            >
               New Transaction
-            </Text>
-            <View>
-              <RadioButton.Group>
-                <View className="flex flex-row  justify-center align-center">
+            </Animated.Text>
+
+            <Animated.View 
+              entering={FadeInDown.delay(100)}
+              style={styles.radioContainer}
+            >
+              <RadioButton.Group
+                onValueChange={handleRadioPress}
+                value={transactionType}
+              >
+                <View style={styles.radioOption}>
                   <Text
-                    className="font-black text-2xl"
-                    onPress={() => setTransactionType("debtor")}
+                    style={styles.radioLabel}
+                    onPress={() => handleRadioPress("debtor")}
                   >
                     Debtor
                   </Text>
                   <RadioButton
                     color="#F25C54"
                     value="debtor"
-                    status={
-                      transactionType === "debtor" ? "checked" : "unchecked"
-                    }
-                    onPress={() => setTransactionType("debtor")}
+                    status={transactionType === "debtor" ? "checked" : "unchecked"}
+                    onPress={() => handleRadioPress("debtor")}
                   />
                 </View>
-                <View className="flex flex-row text-center justify-center align-center">
+                <View style={styles.radioOption}>
                   <Text
-                    className="font-black text-2xl"
-                    onPress={() => setTransactionType("financier")}
+                    style={styles.radioLabel}
+                    onPress={() => handleRadioPress("financier")}
                   >
                     Financier
                   </Text>
                   <RadioButton
                     color="#F25C54"
                     value="financier"
-                    status={
-                      transactionType === "financier" ? "checked" : "unchecked"
-                    }
-                    onPress={() => setTransactionType("financier")}
+                    status={transactionType === "financier" ? "checked" : "unchecked"}
+                    onPress={() => handleRadioPress("financier")}
                   />
                 </View>
               </RadioButton.Group>
-            </View>
-            <View className="flex justify-center items-center mt-10 flex-row">
-              <Text className="text-xl font-bold p-4">Enter Amount</Text>
-              <NumericInput
-                type="up-down"
-                value={amount}
-                minValue={0}
-                onChange={(value) => setAmount(value)}
-                onLimitReached={(isMax, msg) => Alert.alert(isMax, msg)}
-                totalWidth={150}
-                totalHeight={50}
-                iconSize={25}
-                step={1.5}
-                valueType="real"
-                rounded
-                textColor="#F79D65"
-                iconStyle={{ color: "F25C54" }}
-                rightButtonBackgroundColor="#F79D65"
-                leftButtonBackgroundColor="#F79D65"
+            </Animated.View>
+
+            <Animated.View 
+              entering={FadeInDown.delay(200)}
+              style={styles.amountContainer}
+            >
+              <Text style={styles.inputLabel}>Amount ({transactionType === 'debtor' ? 'Borrowing' : 'Lending'})</Text>
+              <View style={styles.amountInputContainer}>
+                <Text style={styles.currencySymbol}>₹</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  value={amount}
+                  onChangeText={handleAmountChange}
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor="grey"
+                  maxLength={10}
+                />
+              </View>
+              <Text style={styles.helperText}>
+                Enter the amount you are {transactionType === 'debtor' ? 'borrowing' : 'lending'}
+              </Text>
+            </Animated.View>
+
+            <Animated.View 
+              entering={FadeInDown.delay(300)}
+              style={styles.inputContainer}
+            >
+              <Text style={styles.inputLabel}>Add a description</Text>
+              <TextInput
+                value={description}
+                style={styles.textInput}
+                underlineColorAndroid="transparent"
+                placeholder="@grizzlybear paid for my bus ticket"
+                placeholderTextColor="grey"
+                numberOfLines={4}
+                multiline={true}
+                onChangeText={(value) => setDescription(value)}
               />
-            </View>
-            <Text className="text-xl font-bold p-4 text-center">
-              Add a description
-            </Text>
-            <TextInput
-              value={description}
-              className="border border-[#fb9b60] p-5 border-1 h-20 flex justify-start mx-10"
-              underlineColorAndroid="transparent"
-              placeholder="@grizzlybear paid for my bus ticket"
-              placeholderTextColor="grey"
-              numberOfLines={4}
-              multiline={true}
-              onChangeText={(value) => setDescription(value)}
-            />
-            <Text className="text-xl font-bold p-4 text-center">
-              Lending To / Borrowing From
-            </Text>
-            <TextInput
-              value={transactionWith}
-              className="border border-[#fb9b60] p-5 border-1 flex justify-start mx-10"
-              height={60}
-              underlineColorAndroid="transparent"
-              placeholder="The unique id you just copied."
-              placeholderTextColor="grey"
-              onChangeText={(value) => {
-                setTransactionWith(value);
-              }}
-            />
-            <View className="m-10 bg-[#fb9b60]">
-              <Button
+            </Animated.View>
+
+            <Animated.View 
+              entering={FadeInDown.delay(400)}
+              style={styles.inputContainer}
+            >
+              <Text style={styles.inputLabel}>Lending To / Borrowing From</Text>
+              <TextInput
+                value={transactionWith}
+                style={styles.textInput}
+                underlineColorAndroid="transparent"
+                placeholder="The unique id you just copied."
+                placeholderTextColor="grey"
+                onChangeText={(value) => setTransactionWith(value)}
+              />
+            </Animated.View>
+
+            <Animated.View 
+              entering={FadeInDown.delay(500)}
+              style={styles.buttonContainer}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  isProcessing && styles.submitButtonDisabled
+                ]}
                 disabled={isProcessing}
-                title={`${
-                  isProcessing ? "Processing..." : "Complete Transaction"
-                }`}
-                color="white"
-                onPress={completeTransaction}
-              />
-            </View>
+                onPress={handleSubmit}
+              >
+                <Text style={styles.submitButtonText}>
+                  {isProcessing ? "Processing..." : "Complete Transaction"}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
           </SafeAreaView>
         </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
-export default NewTransaction;
-
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 80,
+  },
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    height: "auto",
+  },
+  safeArea: {
+    padding: 24,
+    paddingTop: 40,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '600',
+  },
+  headerText: {
+    fontSize: 34,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginVertical: 30,
+    color: '#333',
+  },
+  radioContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginVertical: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  radioOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  radioLabel: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginRight: 10,
+    color: '#333',
+  },
+  amountContainer: {
+    marginVertical: 20,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  amountInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F79D65',
+    paddingHorizontal: 15,
+  },
+  currencySymbol: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+    marginRight: 5,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+    padding: 15,
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  inputLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  inputContainer: {
+    marginVertical: 20,
+  },
+  textInput: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#F79D65',
+    color: '#333',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  buttonContainer: {
+    marginVertical: 30,
+  },
+  submitButton: {
+    backgroundColor: '#F79D65',
+    padding: 18,
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
+
+export default NewTransaction;
