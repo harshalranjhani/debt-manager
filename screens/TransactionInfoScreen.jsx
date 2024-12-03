@@ -11,14 +11,53 @@ const TransactionInfoScreen = ({ navigation, route }) => {
   const [transactedUser, setTransactedUser] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   console.log(route.params.transaction.transactionWith);
+
+  // Add a helper function for safe date formatting
+  const formatDate = (timestamp) => {
+    try {
+      if (!timestamp || !timestamp.toDate) {
+        return 'Date not available';
+      }
+      return timestamp.toDate().toDateString();
+    } catch (error) {
+      console.log('Error formatting date:', error);
+      return 'Date not available';
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    try {
+      if (!timestamp || !timestamp.toDate) {
+        return '';
+      }
+      return timestamp.toDate().toLocaleTimeString("en-US");
+    } catch (error) {
+      console.log('Error formatting time:', error);
+      return '';
+    }
+  };
+
+  // Update the getTransactedUser function with error handling
   const getTransactedUser = async () => {
-    db.collection("users")
-      .where("userRefId", "==", route.params.transaction.transactionWith)
-      .get()
-      .then((snapshot) => {
-        snapshot.forEach((doc) => setTransactedUser(doc.data()));
-      })
-      .catch((e) => console.log(e.message));
+    try {
+      if (!route?.params?.transaction?.transactionWith) {
+        console.log('No transaction data available');
+        return;
+      }
+      
+      const snapshot = await db.collection("users")
+        .where("userRefId", "==", route.params.transaction.transactionWith)
+        .get();
+      
+      if (snapshot.empty) {
+        console.log('No matching user found');
+        return;
+      }
+      
+      snapshot.forEach((doc) => setTransactedUser(doc.data()));
+    } catch (error) {
+      console.log('Error fetching user:', error);
+    }
   };
 
   // Add animation values
@@ -148,7 +187,7 @@ const TransactionInfoScreen = ({ navigation, route }) => {
 
         <View style={styles.descriptionContainer}>
           <Text style={styles.descriptionText}>
-            {route.params.transaction.description.replace(/(?:\n|\n)/g, " ")}
+            {route?.params?.transaction?.description?.replace(/(?:\n|\n)/g, " ") || 'No description available'}
           </Text>
         </View>
 
@@ -156,17 +195,17 @@ const TransactionInfoScreen = ({ navigation, route }) => {
           <Text style={styles.infoLabel}>
             Debtor:{" "}
             <Text style={styles.infoValue}>
-              {route.params.transaction.transactionType == "debtor"
-                ? route.params.transaction.transactionAuthorName
-                : route.params.transaction.transactionWithAuthorName}
+              {route?.params?.transaction?.transactionType === "debtor"
+                ? route?.params?.transaction?.transactionAuthorName
+                : route?.params?.transaction?.transactionWithAuthorName || 'Unknown'}
             </Text>
           </Text>
           <Text style={styles.infoLabel}>
             Financier:{" "}
             <Text style={styles.infoValue}>
-              {route.params.transaction.transactionType == "financier"
-                ? route.params.transaction.transactionAuthorName
-                : route.params.transaction.transactionWithAuthorName}
+              {route?.params?.transaction?.transactionType === "financier"
+                ? route?.params?.transaction?.transactionAuthorName
+                : route?.params?.transaction?.transactionWithAuthorName || 'Unknown'}
             </Text>
           </Text>
         </View>
@@ -174,10 +213,10 @@ const TransactionInfoScreen = ({ navigation, route }) => {
         <View style={styles.dateContainer}>
           <Text style={styles.dateLabel}>Transaction Initiated</Text>
           <Text style={styles.dateText}>
-            {route?.params?.transaction?.created?.toDate().toDateString()}
+            {formatDate(route?.params?.transaction?.created)}
           </Text>
           <Text style={styles.timeText}>
-            {route?.params?.transaction?.created?.toDate().toLocaleTimeString("en-US")}
+            {formatTime(route?.params?.transaction?.created)}
           </Text>
         </View>
 

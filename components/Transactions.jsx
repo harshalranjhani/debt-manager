@@ -15,6 +15,9 @@ import { List, MD3Colors } from "react-native-paper";
 import { Avatar } from "react-native-elements";
 import * as Haptics from 'expo-haptics';
 import { SharedElement } from 'react-navigation-shared-element';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { onSnapshot } from 'firebase/firestore';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Transactions = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(true);
@@ -34,7 +37,6 @@ const Transactions = ({ navigation }) => {
   };
 
   useLayoutEffect(() => {
-    getAllTransactions();
     navigation.setOptions({
       headerShown: true,
       headerStyle: { backgroundColor: "#F25C54" },
@@ -50,61 +52,86 @@ const Transactions = ({ navigation }) => {
     });
   }, [navigation]);
 
-  const getTransactions = () => {
-    setRefreshing(true);
-    let transactionsArray = [];
-    db.collection("transactions")
-      .where("transactionAuthor", "==", auth?.currentUser?.uid)
-      //   .orderBy("created")
-      .get()
-      .then((querySnapshot) =>
-        querySnapshot.forEach((doc) => {
-          console.log(doc.data());
-          console.log({ ...doc.data(), id: doc.id });
-          transactionsArray.push({ ...doc.data(), id: doc.id });
-        })
-      )
-      .then(() => {
-        setTransactions(transactionsArray);
+  useEffect(() => {
+    const loadCachedTransactions = async () => {
+      try {
+        const [cachedTransactions, cachedAwayTransactions] = await Promise.all([
+          AsyncStorage.getItem('transactions'),
+          AsyncStorage.getItem('awayTransactions')
+        ]);
+
+        if (cachedTransactions) setTransactions(JSON.parse(cachedTransactions));
+        if (cachedAwayTransactions) setAwayTransactions(JSON.parse(cachedAwayTransactions));
+      } catch (error) {
+        console.error('Error loading cached transactions:', error);
+      }
+    };
+
+    loadCachedTransactions();
+
+    const transactionsUnsubscribe = onSnapshot(
+      db.collection("transactions").where("transactionAuthor", "==", auth?.currentUser?.uid),
+      (snapshot) => {
+        const transactionsArr = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        setTransactions(transactionsArr);
+        AsyncStorage.setItem('transactions', JSON.stringify(transactionsArr));
         setRefreshing(false);
-      })
-      .catch((e) => console.log(e.message));
+      }
+    );
+
+    const awayTransactionsUnsubscribe = onSnapshot(
+      db.collection("transactions").where("transactionWith", "==", auth?.currentUser?.uid),
+      (snapshot) => {
+        const awayTransactionsArr = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        setAwayTransactions(awayTransactionsArr);
+        AsyncStorage.setItem('awayTransactions', JSON.stringify(awayTransactionsArr));
+        setRefreshing(false);
+      }
+    );
+
+    return () => {
+      transactionsUnsubscribe();
+      awayTransactionsUnsubscribe();
+    };
+  }, []);
+
+  const getAllTransactions = async () => {
+    setRefreshing(true);
+    try {
+      const [cachedTransactions, cachedAwayTransactions] = await Promise.all([
+        AsyncStorage.getItem('transactions'),
+        AsyncStorage.getItem('awayTransactions')
+      ]);
+
+      if (cachedTransactions) setTransactions(JSON.parse(cachedTransactions));
+      if (cachedAwayTransactions) setAwayTransactions(JSON.parse(cachedAwayTransactions));
+    } catch (error) {
+      console.error('Error refreshing transactions:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  const getAwayTransactions = () => {
-    setRefreshing(true);
-    let awayTransactionsArray = [];
-    db.collection("transactions")
-      .where("transactionWith", "==", auth?.currentUser?.uid)
-      //   .orderBy("created")
-      .get()
-      .then((querySnapshot) =>
-        querySnapshot.forEach((doc) => {
-          console.log(doc.data());
-          console.log({ ...doc.data(), id: doc.id });
-          awayTransactionsArray.push({ ...doc.data(), id: doc.id });
-        })
-      )
-      .then(() => {
-        setAwayTransactions(awayTransactionsArray);
-        setRefreshing(false);
-      })
-      .catch((e) => console.log(e.message));
-  };
-
-  const getAllTransactions = () => {
-    getTransactions();
-    getAwayTransactions();
-  };
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      getTransactions();
       getAllTransactions();
-      getAwayTransactions();
     });
 
     return unsubscribe;
   }, []);
+
+  const getTransactionIcon = (amount, description) => {
+    if (description.toLowerCase().includes('food')) {
+      return ['food', '#FF8C00'];
+    } else if (description.toLowerCase().includes('travel')) {
+      return ['airplane', '#4169E1'];
+    } else if (amount > 1000) {
+      return ['currency-inr', '#32CD32'];
+    } else if (amount < 100) {
+      return ['coffee', '#8B4513'];
+    }
+    return ['cash-multiple', '#F25C54'];
+  };
 
   return (
     <Animated.ScrollView
@@ -161,12 +188,39 @@ const Transactions = ({ navigation }) => {
                   style={styles.transactionItem}
                 >
                   <SharedElement id={`transaction.${transaction.id}.image`}>
-                    <Image
-                      source={{
-                        uri: "https://cdn-icons-png.flaticon.com/512/33/33308.png",
-                      }}
-                      style={styles.transactionImage}
-                    />
+                    <Animated.View
+                      style={[
+                        styles.iconContainer,
+                        {
+                          transform: [
+                            {
+                              rotate: scrollY.interpolate({
+                                inputRange: [
+                                  100 * (transactions.indexOf(transaction) - 1),
+                                  100 * transactions.indexOf(transaction),
+                                ],
+                                outputRange: ['0deg', '360deg'],
+                                extrapolate: 'clamp',
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      {(() => {
+                        const [iconName, iconColor] = getTransactionIcon(
+                          transaction.amount,
+                          transaction.description
+                        );
+                        return (
+                          <MaterialCommunityIcons
+                            name={iconName}
+                            size={30}
+                            color={iconColor}
+                          />
+                        );
+                      })()}
+                    </Animated.View>
                   </SharedElement>
                   <View style={styles.transactionDetails}>
                     <Text style={styles.amount}>{`₹${transaction.amount}`}</Text>
@@ -197,12 +251,39 @@ const Transactions = ({ navigation }) => {
                   style={styles.transactionItem}
                 >
                   <SharedElement id={`transaction.${transaction.id}.image`}>
-                    <Image
-                      source={{
-                        uri: "https://cdn-icons-png.flaticon.com/512/33/33308.png",
-                      }}
-                      style={styles.transactionImage}
-                    />
+                    <Animated.View
+                      style={[
+                        styles.iconContainer,
+                        {
+                          transform: [
+                            {
+                              rotate: scrollY.interpolate({
+                                inputRange: [
+                                  100 * (awayTransactions.indexOf(transaction) - 1),
+                                  100 * awayTransactions.indexOf(transaction),
+                                ],
+                                outputRange: ['0deg', '360deg'],
+                                extrapolate: 'clamp',
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      {(() => {
+                        const [iconName, iconColor] = getTransactionIcon(
+                          transaction.amount,
+                          transaction.description
+                        );
+                        return (
+                          <MaterialCommunityIcons
+                            name={iconName}
+                            size={30}
+                            color={iconColor}
+                          />
+                        );
+                      })()}
+                    </Animated.View>
                   </SharedElement>
                   <View style={styles.transactionDetails}>
                     <Text style={styles.amount}>{`₹${transaction.amount}`}</Text>
@@ -264,11 +345,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  transactionImage: {
+  iconContainer: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8f8f8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   transactionDetails: {
     marginLeft: 16,
