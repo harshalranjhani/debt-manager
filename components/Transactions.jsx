@@ -14,7 +14,6 @@ import { auth, db } from "../firebase";
 import { List, MD3Colors } from "react-native-paper";
 import { Avatar } from "react-native-elements";
 import * as Haptics from 'expo-haptics';
-import { SharedElement } from 'react-navigation-shared-element';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onSnapshot } from 'firebase/firestore';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -187,41 +186,39 @@ const Transactions = ({ navigation }) => {
                   onPress={() => handleTransactionPress(transaction)}
                   style={styles.transactionItem}
                 >
-                  <SharedElement id={`transaction.${transaction.id}.image`}>
-                    <Animated.View
-                      style={[
-                        styles.iconContainer,
-                        {
-                          transform: [
-                            {
-                              rotate: scrollY.interpolate({
-                                inputRange: [
-                                  100 * (transactions.indexOf(transaction) - 1),
-                                  100 * transactions.indexOf(transaction),
-                                ],
-                                outputRange: ['0deg', '360deg'],
-                                extrapolate: 'clamp',
-                              }),
-                            },
-                          ],
-                        },
-                      ]}
-                    >
-                      {(() => {
-                        const [iconName, iconColor] = getTransactionIcon(
-                          transaction.amount,
-                          transaction.description
-                        );
-                        return (
-                          <MaterialCommunityIcons
-                            name={iconName}
-                            size={30}
-                            color={iconColor}
-                          />
-                        );
-                      })()}
-                    </Animated.View>
-                  </SharedElement>
+                  <Animated.View
+                    style={[
+                      styles.iconContainer,
+                      {
+                        transform: [
+                          {
+                            rotate: scrollY.interpolate({
+                              inputRange: [
+                                100 * (transactions.indexOf(transaction) - 1),
+                                100 * transactions.indexOf(transaction),
+                              ],
+                              outputRange: ['0deg', '360deg'],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    {(() => {
+                      const [iconName, iconColor] = getTransactionIcon(
+                        transaction.amount,
+                        transaction.description
+                      );
+                      return (
+                        <MaterialCommunityIcons
+                          name={iconName}
+                          size={30}
+                          color={iconColor}
+                        />
+                      );
+                    })()}
+                  </Animated.View>
                   <View style={styles.transactionDetails}>
                     <Text style={styles.amount}>{`₹${transaction.amount}`}</Text>
                     <Text style={styles.description}>{transaction.description}</Text>
@@ -250,41 +247,39 @@ const Transactions = ({ navigation }) => {
                   onPress={() => handleTransactionPress(transaction)}
                   style={styles.transactionItem}
                 >
-                  <SharedElement id={`transaction.${transaction.id}.image`}>
-                    <Animated.View
-                      style={[
-                        styles.iconContainer,
-                        {
-                          transform: [
-                            {
-                              rotate: scrollY.interpolate({
-                                inputRange: [
-                                  100 * (awayTransactions.indexOf(transaction) - 1),
-                                  100 * awayTransactions.indexOf(transaction),
-                                ],
-                                outputRange: ['0deg', '360deg'],
-                                extrapolate: 'clamp',
-                              }),
-                            },
-                          ],
-                        },
-                      ]}
-                    >
-                      {(() => {
-                        const [iconName, iconColor] = getTransactionIcon(
-                          transaction.amount,
-                          transaction.description
-                        );
-                        return (
-                          <MaterialCommunityIcons
-                            name={iconName}
-                            size={30}
-                            color={iconColor}
-                          />
-                        );
-                      })()}
-                    </Animated.View>
-                  </SharedElement>
+                  <Animated.View
+                    style={[
+                      styles.iconContainer,
+                      {
+                        transform: [
+                          {
+                            rotate: scrollY.interpolate({
+                              inputRange: [
+                                100 * (awayTransactions.indexOf(transaction) - 1),
+                                100 * awayTransactions.indexOf(transaction),
+                              ],
+                              outputRange: ['0deg', '360deg'],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    {(() => {
+                      const [iconName, iconColor] = getTransactionIcon(
+                        transaction.amount,
+                        transaction.description
+                      );
+                      return (
+                        <MaterialCommunityIcons
+                          name={iconName}
+                          size={30}
+                          color={iconColor}
+                        />
+                      );
+                    })()}
+                  </Animated.View>
                   <View style={styles.transactionDetails}>
                     <Text style={styles.amount}>{`₹${transaction.amount}`}</Text>
                     <Text style={styles.description}>{transaction.description}</Text>

@@ -1,13 +1,25 @@
-import { createSharedElementStackNavigator } from 'react-navigation-shared-element';
+import { createStackNavigator } from '@react-navigation/stack';
+import TransactionInfoScreen from '../screens/TransactionInfoScreen';
 
-const Stack = createSharedElementStackNavigator();
+const Stack = createStackNavigator();
 
 // In your navigator configuration
 <Stack.Screen
   name="TransactionInfo"
-  component={TransactionInfo}
-  sharedElements={(route) => {
-    const { transaction } = route.params;
-    return [`transaction.${transaction.id}.image`];
+  component={TransactionInfoScreen}
+  options={{
+    cardStyleInterpolator: ({ current: { progress } }) => ({
+      cardStyle: {
+        opacity: progress,
+        transform: [
+          {
+            scale: progress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.9, 1],
+            }),
+          },
+        ],
+      },
+    }),
   }}
 /> 

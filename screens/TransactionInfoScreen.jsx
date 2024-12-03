@@ -5,7 +5,6 @@ import { useRoute } from "@react-navigation/native";
 import { Avatar } from "react-native-elements";
 import { auth, db } from "../firebase";
 import * as Haptics from 'expo-haptics';
-import { SharedElement } from 'react-navigation-shared-element';
 
 const TransactionInfoScreen = ({ navigation, route }) => {
   const [transactedUser, setTransactedUser] = useState({});

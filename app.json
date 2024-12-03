@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "debt-manager",
+    "name": "Debt Manager",
     "slug": "debt-manager",
-    "scheme": "debtmanager",
+    "scheme": "debt-manager",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -37,9 +37,6 @@
       "eas": {
         "projectId": "4e982069-91a1-4063-aa8d-7bee83526c23"
       }
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
     }
   }
 }
